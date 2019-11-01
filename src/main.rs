@@ -17,7 +17,7 @@ use std::io::Write;
 use ray::Ray;
 use objects::{Hittable, HitRecord, Sphere, HittableList};
 use camera::Camera;
-use materials::{Matte, Metal};
+use materials::{Matte, Metal, Glass};
 
 type Vec3 = Vector3<f64>;
 
@@ -49,27 +49,60 @@ fn color(r: &Ray, world: &dyn Hittable, depth: usize) -> Vec3 {
 
     let unit_direction = unit_vector(&r.direction);
     let t = 0.5 * (unit_direction.y + 1.0);
-    (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0)
+    (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(148f64 / 255f64, 250f64 / 255f64, 1f64) 
 }
 
 fn main() {
-    let res_x = 2000;
-    let res_y = 1000;
+    let res_x = 1920;
+    let res_y = 1080;
     let n_passes = 500;
     let mut img: RgbImage = ImageBuffer::new(res_x, res_y);
 
     let camera = Camera::new(
-        Vec3::new(0f64, 0f64, 0f64),
-        Vec3::new(-2f64, -1f64, -1f64),
-        Vec3::new(4f64, 0f64, 0f64),
-        Vec3::new(0f64, 2f64, 0f64)
+        Vec3::new(-2f64, 2f64, 1f64),
+        Vec3::new(0f64, 0f64, -1f64),
+        Vec3::new(0f64, 1f64, 0f64),
+        90f64, 
+        res_x as f64 / res_y as f64
     );
 
     let list: Vec<Box<dyn Hittable>> = vec![
-        Box::new(Sphere::new(Vec3::new(0f64, 0f64, -1f64), 0.5, Box::new(Matte::new(Vec3::new(0.2, 0.2, 0.8))))),
-        Box::new(Sphere::new(Vec3::new(0f64, -100.5, -1f64), 100f64, Box::new(Matte::new(Vec3::new(0.7, 0.7, 0.7))))),
-        Box::new(Sphere::new(Vec3::new(1f64, 0f64, -1f64), 0.5, Box::new(Metal::new(Vec3::new(0.8, 0.6, 0.2), 1f64)))),
-        Box::new(Sphere::new(Vec3::new(-1f64, 0f64, -1f64), 0.5, Box::new(Metal::new(Vec3::new(0.8, 0.8, 0.8), 0.3))))
+        Box::new(
+            Sphere::new(
+                Vec3::new(0f64, 0f64, -1f64), 
+                0.5, 
+                Box::new(
+                    Matte::new(Vec3::new(0.2, 0.2, 0.8))
+                )
+            )
+        ),
+        Box::new(
+            Sphere::new(
+                Vec3::new(0f64, -100.5, -1f64),
+                100f64,
+                Box::new(
+                    Matte::new(Vec3::new(0.7, 0.7, 0.7))
+                )
+            )
+        ),
+        Box::new(
+            Sphere::new(
+                Vec3::new(1f64, 0f64, -1f64),
+                0.5,
+                Box::new(
+                    Metal::new(Vec3::new(0.8, 0.8, 0.8), 1f64)
+                )
+            )
+        ),
+        Box::new(
+            Sphere::new(
+                Vec3::new(-1f64, 0f64, -1f64), 
+                0.5, 
+                Box::new(
+                    Glass::new(Vec3::new(1.0, 1.0, 1.0), 1.5)
+                )
+            )
+        )
     ];
 
     let world = &HittableList::new(list);
@@ -78,7 +111,7 @@ fn main() {
         let progress = format!(" rendering row {} / {}", y + 1, res_y);
         print!("{}", progress);
         io::stdout().flush().unwrap();
-
+        
         for x in 0..res_x {
             let passes: Vec<(f64, f64)> = (0..n_passes)
                 .map(|_| (
